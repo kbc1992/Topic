@@ -1,6 +1,7 @@
 #include <iostream>
 #include <fstream>
 #include <string.h>
+#include <string>
 #include <stdlib.h>
 #include "enviroment.h"
 #include "Sensors_Optimal_Cover.h"
@@ -10,6 +11,30 @@
 
 using namespace std;
 
+void outputResults(Individual &indi,ofstream &fout)
+{
+
+	POS pos;
+	double fitness;
+	double tour_length;
+	double collect_time;
+	
+	vector<WAYPOINT> path = indi.path;
+	vector<WAYPOINT>::iterator iter_path = path.begin();
+	fitness = indi.fitness;
+	tour_length = indi.tour_length;
+	collect_time = indi.collect_time;
+
+	while (iter_path != path.end())
+	{
+		pos = (*iter_path).pos;
+		//cout<<pos.x<<" "<<pos.y<<" "<<pos.z<< endl;
+		fout << pos.x*CUBE_LEN << " " << pos.y*CUBE_LEN << " " << pos.z*CUBE_LEN << " ";
+		iter_path++;
+	}
+	//cout<<fitness<<"\n";
+	fout << " " << tour_length << " " << collect_time << " " << fitness << "\n";
+}
 
 int main()
 {
@@ -19,10 +44,7 @@ int main()
 	Individual my_algorithm_solu;
 	Individual comp_test_1_solu;
 	Individual comp_test_2_solu;
-	POS pos;
-	double fitness;
-	double tour_length;
-	double collect_time;
+
 
 	generate_SNs(s);
 	fout.open("sensor_nodes_position.txt");
@@ -30,63 +52,30 @@ int main()
 		fout << s[i].pos.x <<" "<< s[i].pos.y <<" "<< s[i].pos.z << "\n";
 	fout.close();
 
-
-	my_algorithm_solu = my_algorithm(s);
-	comp_test_1_solu = TSP_GA(s);
-	comp_test_2_solu = testAlgorithm2(s);
-
-
-	fout.open("final_solution.txt");
-
-	
-	vector<WAYPOINT> path = my_algorithm_solu.path;
-	vector<WAYPOINT>::iterator iter_path = path.begin();
-	fitness = my_algorithm_solu.fitness;
-	tour_length = my_algorithm_solu.tour_length;
-	collect_time = my_algorithm_solu.collect_time;
-
-	while(iter_path != path.end())
+	for (int i = 0; i < 20; i++)
 	{
-		pos = (*iter_path).pos;
-		//cout<<pos.x<<" "<<pos.y<<" "<<pos.z<< endl;
-		fout<<pos.x*CUBE_LEN<<" "<<pos.y*CUBE_LEN<<" "<<pos.z*CUBE_LEN<<  " ";
-		iter_path++;
-	}
-	//cout<<fitness<<"\n";
-	fout<<" "<<tour_length<<" "<<collect_time<<" "<<fitness <<"\n";
+		char entire_name[30] = "\0";
+		string  str_entire_name = to_string(i);
+		string filename = "final_solution.txt";
+		str_entire_name = str_entire_name + filename;
+		strcpy(entire_name, str_entire_name.c_str());
+		fout.open(entire_name);
 
-	
-	vector<WAYPOINT> cp1_path = comp_test_1_solu.path;
-	vector<WAYPOINT>::iterator iter_cp1_path = cp1_path.begin();
-	fitness = comp_test_1_solu.fitness;
-	tour_length = comp_test_1_solu.tour_length;
-	collect_time = comp_test_1_solu.collect_time;
-	while(iter_cp1_path != cp1_path.end())
-	{
-		pos = (*iter_cp1_path).pos;
-		//cout<<pos.x<<" "<<pos.y<<" "<<pos.z<< endl;
-		fout<<pos.x*CUBE_LEN<<" "<<pos.y*CUBE_LEN<<" "<<pos.z<< " ";
-		iter_cp1_path++;
-	}
-	fout<<" "<<tour_length<<" "<<collect_time<<" "<<fitness <<"\n";
-	
+		//my_algorithm_solu = my_algorithm(s);
+		//outputResults(my_algorithm_solu, fout);
 
-	vector<WAYPOINT> cp2_path = comp_test_2_solu.path;
-	vector<WAYPOINT>::iterator iter_cp2_path = cp2_path.begin();
-	fitness = comp_test_2_solu.fitness;
-	tour_length = comp_test_2_solu.tour_length;
-	collect_time = comp_test_2_solu.collect_time;
-	while(iter_cp2_path != cp2_path.end())
-	{
-		pos = (*iter_cp2_path).pos;
-		cout<<pos.x<<" "<<pos.y<<" "<<pos.z<< endl;
-		fout<<pos.x <<" "<<pos.y <<" "<<pos.z<< " ";
-		iter_cp2_path++;
-	}
-	cout<<fitness<<endl;
-	fout<<" "<<tour_length<<" "<<collect_time<<" "<<fitness <<"\n";
+		//comp_test_1_solu = TSP_GA(s);
+		//outputResults(comp_test_1_solu, fout);
 
-    fout.close();
+		comp_test_2_solu = testAlgorithm2(s);
+		outputResults(comp_test_2_solu, fout);
+
+
+		fout.close();
+
+		
+		
+	}
 	
 	
 

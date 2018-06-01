@@ -7,11 +7,11 @@ using namespace std;
 
 static const short he = 10;
 static const short particle_num = 100;
-static const short generations = 15000;
+static const short generations = 20000;
 static const double c1 = 2.0;
 static const double c2 = 2.0;
 static const double wei = 0.8;
-static const double attenuation_factor = 0.99999;
+static const double attenuation_factor = 0.9999;
 
 typedef struct Particle
 {

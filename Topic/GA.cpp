@@ -33,7 +33,7 @@ void generate_adjacent_matrix(double **adjacencyMatrix,int n,SENSOR_NODE s[])
 			adjacencyMatrix[i][j] = dist(s[i].pos,s[j].pos);
 			//cout<< adjacencyMatrix[i][j] << " ";
 		}
-		cout<<endl;
+		//cout<<endl;
 	}
 	for(int i=0;i<n;i++)
 	{
@@ -50,6 +50,36 @@ void generate_adjacent_matrix(double **adjacencyMatrix,int n,SENSOR_NODE s[])
 	*/
 }
 
+void generate_adjacent_matrix(double **adjacencyMatrix, int n, SENSOR_NODE s[],short h)
+{
+	POS start = { x_start,y_start,h };
+	for (int i = 0; i<n; i++)
+	{
+		adjacencyMatrix[i] = new double[n];
+	}
+
+	for (int i = 0; i<n; i++) {
+		for (int j = 0; j<n; j++) {
+			adjacencyMatrix[i][j] = dist(s[i].pos, s[j].pos);
+			//cout<< adjacencyMatrix[i][j] << " ";
+		}
+		//cout<<endl;
+	}
+	for (int i = 0; i<n; i++)
+	{
+		adjacencyMatrix[i][i] = dist(start, s[i].pos);
+	}
+	/*
+	//debug the matrix
+	for (int i=0; i<n; i++) {
+	for (int j=0; j<n; j++) {
+	cout<< adjacencyMatrix[i][j] << " ";
+	}
+	cout<<endl;
+	}
+	*/
+}
+
 void delete_adjacent_matrix(double **adjacencyMatrix,int n)
 {
 	for(int i=0;i<n;i++)
@@ -58,43 +88,48 @@ void delete_adjacent_matrix(double **adjacencyMatrix,int n)
 	}
 }
 
-double calculate(vector<int> v, const int &n, double **adjacencyMatrix) {
+double calculate(vector<int> &v, const int &n, double **adjacencyMatrix) {
+
 	double tour_len = 0.0;
-	double collec_time = 0.0;
-	double Ef = 0.0;
-	double Ec = 0.0;
-	double fitness = 0.0;
 	tour_len += adjacencyMatrix[v[0]][v[0]];
 	REP(i,n-1) {
 		tour_len += adjacencyMatrix[v[i]][v[i+1]];
 	}
 	tour_len += adjacencyMatrix[v[n-1]][v[n-1]];
-	collec_time = n * sensorData * 8/250.0;
-	Ef = E1 * tour_len /velocity;
-	Ec = E2 * collec_time;
-	fitness = Ef + Ec;
-	return fitness;
+	return tour_len;
 }
 
-void generate(const int &n, double **adjacencyMatrix) {
+void generate(const int &n, double **adjacencyMatrix)
+{
 	population.reserve(population_size);
 	new_population.reserve(population_size);
-	tmp.reserve(n);
 	tmp.clear();
-	REP(i,n) tmp.push_back(i);
-	REP(i,population_size) {
-		population.push_back(make_pair(tmp,calculate(tmp,n,adjacencyMatrix)));
+	tmp.reserve(n);
+	REP(i, n) tmp.push_back(i);
+	REP(i, population_size) {
+		/*
+		vi::iterator iter_path_order = tmp.begin();
+		while (iter_path_order != tmp.end())
+		{
+			cout << *iter_path_order << " ";
+			iter_path_order++;
+		}
+		*/
+		double fitness = calculate(tmp, n, adjacencyMatrix);
+		//cout << fitness << endl;
+		population.push_back(make_pair(tmp,fitness));
 		random_shuffle(population[i].first.begin(), population[i].first.end());
 	}
 	tmp2.clear();
 	tmp3.clear();
 	tmp2.reserve(n);
 	tmp3.reserve(n);
-	REP(i,n) {
+	REP(i, n) {
 		tmp2.push_back(i);
 		tmp3.push_back(i);
 	}
 }
+
 
 void inversion_mutation(vi &v, const int &n) {
 	int l = rand() % n;
@@ -229,7 +264,15 @@ void reproduction(const int &n, double **adjacencyMatrix) {
 }
 
 double GA(double **adjacencyMatrix, const int &n, vi &result) {
+	population.clear();
+	new_population.clear();
+	tmp.clear(); 
+	tmp2.clear();
+	tmp3.clear();
+	bestpopulation.clear();
+	bestresult = 0;
 	srand(time(0));
+
 	generate(n,adjacencyMatrix);	
 	
 	sort(population.begin(), population.end(), cmp);
@@ -245,7 +288,7 @@ double GA(double **adjacencyMatrix, const int &n, vi &result) {
 		selection(n, adjacencyMatrix);
 		
 		reproduction(n, adjacencyMatrix);
-		cout << s<<endl;
+		//cout << s <<endl;
 	}
 	REP(i,(int)population.size()) {
 		if (population[i].second < bestresult) {
@@ -255,6 +298,14 @@ double GA(double **adjacencyMatrix, const int &n, vi &result) {
 	}
 
 	result = bestpopulation; 
-	
+	/*
+	vi::iterator iter_path_order = result.begin();
+	while (iter_path_order != result.end())
+	{
+		cout << *iter_path_order << " ";
+		iter_path_order++;
+	}
+	cout << bestresult<<endl;
+	*/
 	return bestresult;
 }

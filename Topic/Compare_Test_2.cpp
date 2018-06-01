@@ -63,7 +63,7 @@ double setFitness(Individual& solution,SENSOR_NODE s[])
 	tour_length = tour_length + dist_PSO(path[path.size()-1].pos,path[0].pos);
 	Ef = E1 * tour_length / velocity;
 	//calculate the time and the energy spent on collecting data
-	for(unsigned int i=1; i<path.size()-1; i++)
+	for(unsigned int i=1; i<path.size(); i++)
 	{
 		iter_sensor_nodes =  path[i].ss.begin();
 		while(iter_sensor_nodes!=path[i].ss.end())
@@ -153,7 +153,7 @@ void generateParticles(SENSOR_NODE s[])
 	srand(time(NULL));
 	for(int i=0;i<particle_num;)
 	{
-		int num_dimen = rand()%SN_NUM + SN_NUM ;
+		int num_dimen = SN_NUM;//rand()%SN_NUM + SN_NUM ;
 		temp.position.clear();
 		temp.position.push_back(start);
 		temp.fitness = 0.0;

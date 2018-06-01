@@ -13,7 +13,8 @@ Individual TSP_GA(SENSOR_NODE s[])
 	start.pos = pos_start;
 	comp_solut.path.push_back(start);
 	generate_adjacent_matrix(adjacentMatrix,SN_NUM,s);
-	result = GA(adjacentMatrix,SN_NUM,path_order);
+	path_order.clear();
+	GA(adjacentMatrix,SN_NUM,path_order);
 	for(vi::iterator iter_path = path_order.begin();iter_path != path_order.end();iter_path++)
 	{
 		WAYPOINT temp;

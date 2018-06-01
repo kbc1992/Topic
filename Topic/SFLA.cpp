@@ -7,6 +7,7 @@
 #include <fstream>
 #include <iterator>
 #include <cstdio>
+#include <thread>
 
 using namespace std;
 
@@ -19,8 +20,8 @@ double getFitness(Individual& solution,SENSOR_NODE s[])
     vector<WAYPOINT> path = solution.path;
     float tour_length = 0.0;
     float col_time = 0.0;
-    float Ef;
-    float Ec;
+    float Ef = 0.0;
+    float Ec = 0.0;
     double fitness;
     set<short>::iterator iter_sensor_nodes;
     //calculate the total length and flight energy.
@@ -31,7 +32,7 @@ double getFitness(Individual& solution,SENSOR_NODE s[])
     tour_length = tour_length + dist(path[path.size()-1].pos,path[0].pos);
     Ef = E1 * tour_length / velocity;
     //calculate the time and the energy spent on collecting data
-    for(unsigned int i=1; i<path.size()-1; i++)
+    for(unsigned int i=1; i<path.size(); i++)
     {
         iter_sensor_nodes =  path[i].ss.begin();
         while(iter_sensor_nodes!=path[i].ss.end())
@@ -43,8 +44,10 @@ double getFitness(Individual& solution,SENSOR_NODE s[])
                 col_time = col_time + sensorData * 8 / dateRate;
                 entire_sensor_nodes.erase(j);
             }
+			//cout << j << " ";
             iter_sensor_nodes++;
         }
+		//cout << col_time << endl;
     }
     Ec = E2 * col_time;
     fitness = (Ef + Ec);
@@ -89,6 +92,20 @@ Individual randGeneOneSolut(map<set<short>,vector<int> >& optimal_overlapping_re
         vec_overlap_region.erase(vec_overlap_region.begin()+j);
     }
     solution.fitness = getFitness(solution,s);
+	/*
+	int i = 0;
+	if(i<100)
+	{
+	vector<WAYPOINT> path_temp = solution.path;
+	vector<WAYPOINT>::iterator iter_path_temp = path_temp.begin();
+	while(iter_path_temp != path_temp.end())
+	{
+	cout<<(*iter_path_temp).pos.x<<" "<<(*iter_path_temp).pos.y<<" "<<(*iter_path_temp).pos.z<<endl;
+	iter_path_temp++;
+	}
+	}
+	*/
+	Sleep(800);
     return solution;
 }
 
@@ -128,6 +145,8 @@ bool isFeasibleSolution(Individual& solution)
     entire_sensor_nodes.clear();
 	bool flag1 = true;
 	bool flag2 = true;
+	bool flag3 = true;
+
     for(short i=0; i<SN_NUM; i++)
         entire_sensor_nodes.insert(i);
     vector<WAYPOINT> path = solution.path;
@@ -148,8 +167,9 @@ bool isFeasibleSolution(Individual& solution)
 
     if(sensor_nodes_path_contained != entire_sensor_nodes )
         flag2 = false;
-
-	if(flag1 && flag2)
+	if (solution.fitness > Emax)
+		flag3 = false;
+	if(flag1 && flag2 )
 		return true;
 	else
 		return false;
@@ -159,14 +179,17 @@ bool isFeasibleSolution(Individual& solution)
 void init(map<set<short>,vector<int> >& optimal_overlapping_regions,vector<Individual>& population,SENSOR_NODE s[],short h)
 {
 	Individual temp;
-    for(int i=0; i<Popus; i++)
+    for(int i=0; i<Popus;i++)
     {
-        temp = randGeneOneSolut(optimal_overlapping_regions,s,h);
-        population.push_back(temp);
-
+		//randGeneOneSolut(optimal_overlapping_regions, population, s, h);
+		Individual indi;
+		indi = randGeneOneSolut(optimal_overlapping_regions,s, h);
+		population.push_back(indi);
+	
+			
         /*
-        //if(i<20)
-        //{
+        if(i<20)
+        {
             vector<WAYPOINT> path_temp = temp.path;
             vector<WAYPOINT>::iterator iter_path_temp = path_temp.begin();
             while(iter_path_temp != path_temp.end())
@@ -174,9 +197,8 @@ void init(map<set<short>,vector<int> >& optimal_overlapping_regions,vector<Indiv
                 cout<<(*iter_path_temp).pos.x<<" "<<(*iter_path_temp).pos.y<<" "<<(*iter_path_temp).pos.z<<endl;
                 iter_path_temp++;
             }
-        //}
+        }
         */
-        Sleep(800);
 
     }
 
@@ -471,6 +493,7 @@ void positionUpdate(Individual& bestSolution,Individual& worstSolution,map<set<s
 
 }
 
+
 void relativeOrderUpdate(Individual& worstSolution,SENSOR_NODE s[])
 {
 	DWORD start, stop;  
@@ -492,6 +515,50 @@ void relativeOrderUpdate(Individual& worstSolution,SENSOR_NODE s[])
 	//printf("the time to update  relative order: %d ms\n", stop - start);  
 
 }
+
+
+/*
+void relativeOrderUpdate(Individual& worstSolution, SENSOR_NODE s[])
+{
+	//DWORD start, stop;
+	//start = GetTickCount(); 
+	vector<WAYPOINT> path;
+	vector<WAYPOINT> temp_path;
+	path.clear();
+	temp_path.clear();
+	path = worstSolution.path;
+	short h = path[0].pos.z;
+	int wp_num = path.size();
+	double **adjacentMatrix = new double*[wp_num];
+
+	vi path_order;
+	SENSOR_NODE *s1 = new SENSOR_NODE[wp_num];
+	for (int i = 0; i < wp_num; i++)
+	{
+		s1[i].id = i;
+		s1[i].pos = path[i].pos;
+	}
+
+	generate_adjacent_matrix(adjacentMatrix, wp_num, s1,h);
+	path_order.clear();
+
+	GA(adjacentMatrix, wp_num, path_order);
+	for (int i = 0; i < wp_num; i++)
+	{
+		temp_path.push_back(path[path_order[i]]);
+	}
+	worstSolution.path.clear();
+	worstSolution.path = temp_path;
+	getFitness(worstSolution, s);
+
+	delete[] s1;
+	delete_adjacent_matrix(adjacentMatrix, wp_num);
+	delete[] adjacentMatrix;
+	//stop = GetTickCount();  
+	//printf("the time to update  relative order: %d ms\n", stop - start);  
+
+}
+*/
 
 Individual updateWosrtSolution(Individual& bestSolution,Individual& worstSolution,map<set<short>,vector<int> >& overlapping_regions,SENSOR_NODE s[])
 {
@@ -530,14 +597,47 @@ Individual updateWosrtSolution(Individual& bestSolution,Individual& worstSolutio
 	return final_updated_sol;
 }
 
+void updateMemeplex(vector<Individual> &subPopulation,Individual &global_best_sol,map<set<short>, vector<int> >& optimal_overlapping_regions, SENSOR_NODE s[], short h)
+{
+	Individual local_best_sol;
+	Individual local_worst_sol;
+
+	for (int k = 0; k<Num; k++)
+	{
+		vector<Individual> subGroup;
+		subGroup.clear();
+		constructGroup(subPopulation, subGroup);
+		sortIndividuals(subGroup);
+		//cout<<subPopulations[j].size()<<" " <<subGroup.size()<<endl;
+		local_best_sol = subGroup.at(0);
+		local_worst_sol = subGroup.at(GInd - 1);
+		Individual updated_sol = updateWosrtSolution(local_best_sol, local_worst_sol, optimal_overlapping_regions, s);
+		if (updated_sol.fitness >= local_worst_sol.fitness)
+		{
+			updated_sol = updateWosrtSolution(global_best_sol, local_worst_sol, optimal_overlapping_regions, s);
+			if (updated_sol.fitness >= local_worst_sol.fitness)
+			{
+				subGroup[GInd - 1] = geneOneSolutByBestIndi(global_best_sol, optimal_overlapping_regions, s, h);
+			}
+			else
+			{
+				subGroup[GInd - 1] = updated_sol;
+			}
+		}
+		else
+		{
+			subGroup[GInd - 1] = updated_sol;
+		}
+		reBuildSubPopulation(subPopulation, subGroup);
+		sortIndividuals(subPopulation);
+	}
+}
 Individual shuffledFrogLeapingAlgo(map<set<short>,vector<int> >& optimal_overlapping_regions,SENSOR_NODE s[],short h)
 {
 
 
     vector<Individual> population;
     Individual global_best_sol;
-    Individual local_best_sol;
-    Individual local_worst_sol;
     vector<vector<Individual> > subPopulations;
     ofstream fout;
     char str[30]="opti_solu_in_each_gene.txt";
@@ -573,46 +673,26 @@ Individual shuffledFrogLeapingAlgo(map<set<short>,vector<int> >& optimal_overlap
         fout.close();
         */
 
-		
+		/*
 		fout.open(fit,ios::app);
 		double fit = global_best_sol.fitness;
 		fout<<fit<<"\n";
 		fout.close();
-		
+		*/
+
 		subPopulations.clear();
         seperateIntoSubPopulation(population,subPopulations);
+		thread evolve[Meme];
         for(int j=0;j<Meme;j++)
         {
-            for(int k=0;k<Num;k++)
-            {
-                vector<Individual> subGroup;
-                subGroup.clear();
-                constructGroup(subPopulations.at(j),subGroup);
-                sortIndividuals(subGroup);
-                //cout<<subPopulations[j].size()<<" " <<subGroup.size()<<endl;
-                local_best_sol = subGroup.at(0);
-                local_worst_sol = subGroup.at(GInd-1);
-                Individual updated_sol = updateWosrtSolution(local_best_sol,local_worst_sol,optimal_overlapping_regions,s);
-                if(updated_sol.fitness >= local_worst_sol.fitness)
-                {
-                    updated_sol = updateWosrtSolution(global_best_sol,local_worst_sol,optimal_overlapping_regions,s);
-                    if(updated_sol.fitness >= local_worst_sol.fitness)
-                    {
-                        subGroup[GInd-1]=geneOneSolutByBestIndi(global_best_sol,optimal_overlapping_regions,s,h);
-                    }
-                    else
-                    {
-                        subGroup[GInd-1] = updated_sol;
-                    }
-                }
-                else
-                {
-                    subGroup[GInd-1] = updated_sol;
-                }
-                reBuildSubPopulation(subPopulations[j],subGroup);
-                sortIndividuals(subPopulations[j]);
-            }
+			evolve[j] = thread(updateMemeplex, ref(subPopulations[j]), global_best_sol, ref(optimal_overlapping_regions), s, h);
+			
+			//updateMemeplex(subPopulations[j], global_best_sol, optimal_overlapping_regions, s, h);
         }
+		for (int j = 0; j < Meme; j++)
+		{
+			evolve[j].join();
+		}
         mergyIntoPopulation(population,subPopulations);
         sortIndividuals(population);
 		/*
@@ -653,19 +733,193 @@ Individual shuffledFrogLeapingAlgo(map<set<short>,vector<int> >& optimal_overlap
     return population[0];
 }
 
+void thread_1(SENSOR_NODE s[],short h,Individual &bestIndividual)
+{
+	map<int, set<short> > point_set;
+	map<set<short>, vector<int> > overlapping_regions;
+	map<set<short>, vector<int> > optimal_overlapping_regions;
+	map<set<short>, float> ave_col_times;
+
+	point_set.clear();
+	overlapping_regions.clear();
+	optimal_overlapping_regions.clear();
+	ave_col_times.clear();
+	ofstream fout;
+	Individual final_solu;
+
+	generate_point_set(point_set, s, h);
+	generate_overlapping_region(point_set, overlapping_regions);
+
+	/*
+	int filename = 0;
+	map<set<short>,vector<int> >::iterator iter_over_reg;
+	iter_over_reg = overlapping_regions.begin();
+	while(iter_over_reg != overlapping_regions.end())
+	{
+	char strfilename[10];
+	char *lastname = ".txt";
+	itoa(filename,strfilename,10);
+	strcat(strfilename,lastname);
+	fout.open(strfilename);
+	cout<<strfilename<<endl;
+	vector<int> temp_points = iter_over_reg->second;
+	vector<int>::iterator iter_points = temp_points.begin();
+	while(iter_points!=temp_points.end())
+	{
+	POS pos;
+	int_to_point(*iter_points,pos);
+	fout << pos.x <<" " <<pos.y <<" "<<pos.z<<"\n";
+	iter_points++;
+	}
+	fout.close();
+	iter_over_reg++;
+	filename++;
+	}
+
+	*/
+
+	/*
+	map<set<short>,vector<int> >::iterator it;
+	it = overlapping_regions.begin();
+	cout << overlapping_regions.size() << endl;
+	while(it != overlapping_regions.end())
+	{
+	cout << it->first.size() << " ";
+	set<short>::iterator its;
+	its = it->first.begin();
+	while(its != it->first.end())
+	{
+	cout << *its << " " ;
+	its++;
+	}
+	cout << it->second.size() << " ";
+	cout << endl;
+	it++;
+
+	}
+	*/
+
+	getAveColTime(overlapping_regions, s, ave_col_times);
+
+	/*
+
+	map<set<short>,float>::iterator ite_ave_time;
+	ite_ave_time = ave_col_times.begin();
+	cout << ave_col_times.size() << endl;
+	int i=0;
+	while(i<50 && ite_ave_time != ave_col_times.end())
+	{
+	cout << ite_ave_time->first.size() << " ";
+	set<short>::iterator ite_sen_nodes;
+	ite_sen_nodes = ite_ave_time->first.begin();
+	while(ite_sen_nodes != ite_ave_time->first.end())
+	{
+	cout << *ite_sen_nodes << " " ;
+	ite_sen_nodes++;
+	}
+	cout << ite_ave_time->second << " ";
+	cout << endl;
+	i++;
+	ite_ave_time++;
+
+	}
+	*/
+
+
+	findOptiOverlReg(overlapping_regions, ave_col_times, optimal_overlapping_regions);
+
+	center_in_each_region.clear();
+	for (map<set<short>, vector<int> >::iterator iter_opt_ovel_reg = optimal_overlapping_regions.begin(); iter_opt_ovel_reg != optimal_overlapping_regions.end(); iter_opt_ovel_reg++)
+	{
+		set<short> temp_region = iter_opt_ovel_reg->first;
+		POS temp_center = findBestDCPSet(temp_region, iter_opt_ovel_reg->second, s);
+		center_in_each_region.insert(pair<set<short>, POS>(temp_region, temp_center));
+	}
+
+	/*
+	filename = 0;
+	map<set<short>,vector<int> >::iterator iter_opt_over_reg;
+	iter_opt_over_reg = optimal_overlapping_regions.begin();
+	while(iter_opt_over_reg != optimal_overlapping_regions.end())
+	{
+	char strfilename[30];
+	char *lastname = "_optimal_region.txt";
+	itoa(filename,strfilename,10);
+	strcat(strfilename,lastname);
+	fout.open(strfilename);
+	cout<<strfilename<<endl;
+	vector<int> temp_points = iter_opt_over_reg->second;
+	vector<int>::iterator iter_points = temp_points.begin();
+	while(iter_points!=temp_points.end())
+	{
+	POS pos;
+	int_to_point(*iter_points,pos);
+	fout << pos.x <<" " <<pos.y <<" "<<pos.z<<"\n";
+	iter_points++;
+	}
+	fout.close();
+	iter_opt_over_reg++;
+	filename++;
+	}
+	*/
+
+	/*
+	map<set<short>,vector<int> >::iterator it;
+	it = optimal_overlapping_regions.begin();
+	cout << optimal_overlapping_regions.size() << endl;
+	int i=0;
+	while(it != optimal_overlapping_regions.end())
+	{
+	cout << it->first.size() << " ";
+	set<short>::iterator its;
+	its = it->first.begin();
+	while(its != it->first.end())
+	{
+	cout << *its << " " ;
+	its++;
+	}
+	cout << it->second.size() << " ";
+	cout << endl;
+	i++;
+	it++;
+
+	}
+	*/
+
+	final_solu = shuffledFrogLeapingAlgo(optimal_overlapping_regions, s, h);
+	///*
+	//test the optimal solution in each generation.
+	// fout.open(str,ios::app);
+	vector<WAYPOINT> path = final_solu.path;
+	double fitness = final_solu.fitness;
+	vector<WAYPOINT>::iterator iter_path = path.begin();
+	POS pos;
+	while (iter_path != path.end())
+	{
+		pos = (*iter_path).pos;
+		// fout<<pos.x<<" "<<pos.y<<" "<<pos.z<< "\t";
+		cout << pos.x << " " << pos.y << " " << pos.z << "||";
+		iter_path++;
+	}
+	cout << fitness << endl;
+	//fout<<fitness<<"\n";
+	// fout.close();
+	//*/
+	if (final_solu.fitness < bestIndividual.fitness)
+	{
+		bestIndividual = final_solu;
+	}
+
+}
 
 Individual my_algorithm(SENSOR_NODE sn[])
 {
-	map<int,set<short> > point_set;
-    map<set<short>,vector<int> > overlapping_regions;
-    map<set<short>,vector<int> > optimal_overlapping_regions;
-    map<set<short>,float> ave_col_times;
+
 	short h = minimal_height;
 	Individual bestIndividual;
 	bestIndividual.fitness = (double)INT_MAX;
 
-    ofstream fout;
-    Individual final_solu;
+
 	SENSOR_NODE s[SN_NUM];
 	for(int i=0;i<SN_NUM;i++)
 	{
@@ -676,179 +930,23 @@ Individual my_algorithm(SENSOR_NODE sn[])
 	}
 
 	center_all_regions = findCenterAllRegion(s,h);
-
+	thread t[3];
+	/*
 	for(;h<COMM_RANGE/4;h+=10)
 	{
-		point_set.clear();
-		overlapping_regions.clear();
-		optimal_overlapping_regions.clear();
-		ave_col_times.clear();
-
-		generate_point_set(point_set,s,h);
-		generate_overlapping_region(point_set,overlapping_regions);
-
-		/*
-		int filename = 0;
-		map<set<short>,vector<int> >::iterator iter_over_reg;
-		iter_over_reg = overlapping_regions.begin();
-		while(iter_over_reg != overlapping_regions.end())
-		{
-		char strfilename[10];
-		char *lastname = ".txt";
-		itoa(filename,strfilename,10);
-		strcat(strfilename,lastname);
-		fout.open(strfilename);
-		cout<<strfilename<<endl;
-		vector<int> temp_points = iter_over_reg->second;
-		vector<int>::iterator iter_points = temp_points.begin();
-		while(iter_points!=temp_points.end())
-		{
-		POS pos;
-		int_to_point(*iter_points,pos);
-		fout << pos.x <<" " <<pos.y <<" "<<pos.z<<"\n";
-		iter_points++;
-		}
-		fout.close();
-		iter_over_reg++;
-		filename++;
-		}
-
-		*/
-
-		/*
-		map<set<short>,vector<int> >::iterator it;
-		it = overlapping_regions.begin();
-		cout << overlapping_regions.size() << endl;
-		while(it != overlapping_regions.end())
-		{
-		cout << it->first.size() << " ";
-		set<short>::iterator its;
-		its = it->first.begin();
-		while(its != it->first.end())
-		{
-		cout << *its << " " ;
-		its++;
-		}
-		cout << it->second.size() << " ";
-		cout << endl;
-		it++;
-
-		}
-		*/
-
-		getAveColTime(overlapping_regions,s,ave_col_times);
-
-		/*
-
-		map<set<short>,float>::iterator ite_ave_time;
-		ite_ave_time = ave_col_times.begin();
-		cout << ave_col_times.size() << endl;
-		int i=0;
-		while(i<50 && ite_ave_time != ave_col_times.end())
-		{
-		cout << ite_ave_time->first.size() << " ";
-		set<short>::iterator ite_sen_nodes;
-		ite_sen_nodes = ite_ave_time->first.begin();
-		while(ite_sen_nodes != ite_ave_time->first.end())
-		{
-		cout << *ite_sen_nodes << " " ;
-		ite_sen_nodes++;
-		}
-		cout << ite_ave_time->second << " ";
-		cout << endl;
-		i++;
-		ite_ave_time++;
-
-		}
-		*/
-
-
-		findOptiOverlReg(overlapping_regions,ave_col_times,optimal_overlapping_regions);
-
-		center_in_each_region.clear();
-		for(map<set<short>,vector<int> >::iterator iter_opt_ovel_reg = optimal_overlapping_regions.begin();iter_opt_ovel_reg!=optimal_overlapping_regions.end();iter_opt_ovel_reg++)
-		{
-			set<short> temp_region = iter_opt_ovel_reg->first;
-			POS temp_center = findBestDCPSet(temp_region,iter_opt_ovel_reg->second,s);
-			center_in_each_region.insert(pair<set<short>,POS>(temp_region,temp_center));
-		}
-
-		/*
-		filename = 0;
-		map<set<short>,vector<int> >::iterator iter_opt_over_reg;
-		iter_opt_over_reg = optimal_overlapping_regions.begin();
-		while(iter_opt_over_reg != optimal_overlapping_regions.end())
-		{
-		char strfilename[30];
-		char *lastname = "_optimal_region.txt";
-		itoa(filename,strfilename,10);
-		strcat(strfilename,lastname);
-		fout.open(strfilename);
-		cout<<strfilename<<endl;
-		vector<int> temp_points = iter_opt_over_reg->second;
-		vector<int>::iterator iter_points = temp_points.begin();
-		while(iter_points!=temp_points.end())
-		{
-		POS pos;
-		int_to_point(*iter_points,pos);
-		fout << pos.x <<" " <<pos.y <<" "<<pos.z<<"\n";
-		iter_points++;
-		}
-		fout.close();
-		iter_opt_over_reg++;
-		filename++;
-		}
-		*/
-
-		/*
-		map<set<short>,vector<int> >::iterator it;
-		it = optimal_overlapping_regions.begin();
-		cout << optimal_overlapping_regions.size() << endl;
-		int i=0;
-		while(it != optimal_overlapping_regions.end())
-		{
-		cout << it->first.size() << " ";
-		set<short>::iterator its;
-		its = it->first.begin();
-		while(its != it->first.end())
-		{
-		cout << *its << " " ;
-		its++;
-		}
-		cout << it->second.size() << " ";
-		cout << endl;
-		i++;
-		it++;
-
-		}
-		*/
-
-		final_solu = shuffledFrogLeapingAlgo(optimal_overlapping_regions,s,h);
-		///*
-        //test the optimal solution in each generation.
-       // fout.open(str,ios::app);
-        vector<WAYPOINT> path = final_solu.path;
-        double fitness = final_solu.fitness;
-        vector<WAYPOINT>::iterator iter_path = path.begin();
-        POS pos;
-        while(iter_path != path.end())
-        {
-            pos = (*iter_path).pos;
-           // fout<<pos.x<<" "<<pos.y<<" "<<pos.z<< "\t";
-			cout<<pos.x<<" "<<pos.y<<" "<<pos.z<<"||";
-            iter_path++;
-        }
-        cout<<fitness<<endl;
-        //fout<<fitness<<"\n";
-       // fout.close();
-        //*/
-
-		if(final_solu.fitness < bestIndividual.fitness)
-		{
-			bestIndividual = final_solu;
-		}
+		thread t(thread_1, s, h, ref(bestIndividual));
+		t.join();
 
 	}
-    
+    */
+	for (int i = 0; i < 3; i++)
+	{
+		h = (i + 1) * minimal_height;
+		t[i] = thread(thread_1, s, h, ref(bestIndividual));
+	}
+	for (int i = 0; i < 3; i++)
+	{
+		t[i].join();
+	}
 	return bestIndividual;
 }

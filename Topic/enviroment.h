@@ -12,14 +12,14 @@ const static short Y=1200;
 const static short minimal_height = 10;
 const static short COMM_RANGE=160.0;
 const static short CUBE_LEN=1;
-
+const static float weight = 1.3095;
 const static short g_x=X/CUBE_LEN;
 const static short g_y=Y/CUBE_LEN;
 const static short g_R=COMM_RANGE/CUBE_LEN;
 
-const static short SN_NUM=10;
+const static short SN_NUM = 30;
 
-const static short sensorData = 20; //unit kB
+const static short sensorData = 5; //unit kB
 
 // position of points
 typedef struct POS

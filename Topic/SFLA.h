@@ -4,18 +4,19 @@
 #include "enviroment.h"
 #include "Sensors_Optimal_Cover.h"
 #include <vector>
+#include "GA.h"
 
 using namespace std;
 
-#define Gene 1000  /*混合迭代次数*/
-#define Popus 200 /*个体总数*/
-#define Meme 20 /*子群数*/
+#define Gene 8000  /*混合迭代次数*/
+#define Popus 100 /*个体总数*/
+#define Meme 10 /*子群数*/
 #define Indis 10 /*因此，一个子群中的个体数是10*/
 #define Num 10 /*子群内更新次数*/
 #define GInd 5    /*子群组中的个体数*/
 #define E1  461.08   /*无人机飞行能耗 j/s*/
 #define E2  352.59  /*无人机悬停能耗 j/s*/
-
+#define Emax 359640.0 /*电池最大能耗*/
 const static short x_start = 0;
 const static short y_start = 0;
 const static short z_start = 0;
@@ -53,7 +54,7 @@ typedef struct Individual
 //获取解的适应度
 double getFitness(Individual& solution,SENSOR_NODE s[]);
 //随机生成一个可行解
-Individual randGeneOneSolut(map<set<short>,vector<int> >& optimal_overlapping_regions,SENSOR_NODE s[],short h);
+Individual randGeneOneSolut(map<set<short>,vector<int> >& optimal_overlapping_regions, SENSOR_NODE s[],short h);
 //按照最优解的遍历顺序生成一个可行解
 Individual geneOneSolutByBestIndi(Individual& bestSolution,map<set<short>,vector<int> >& optimal_overlapping_regions,SENSOR_NODE s[],short h);
 //判断一个解是不是可行解

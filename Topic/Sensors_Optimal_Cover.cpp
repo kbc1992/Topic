@@ -103,23 +103,42 @@ void findOptiOverlReg(map<set<short>,vector<int> >& overlapping_regions,map<set<
         {
             min_intersect_sensors.clear();
             temp_intersect_sensors.clear();
+			float min = 0.0, temp = 0.0;
             set_intersection(entile_sensor_nodes.begin(),entile_sensor_nodes.end(),min_cost_reg.begin(),min_cost_reg.end(),inserter(min_intersect_sensors,min_intersect_sensors.begin()));
             set_intersection(entile_sensor_nodes.begin(),entile_sensor_nodes.end(),(*ite_temp_ovel_reg).begin(),(*ite_temp_ovel_reg).end(),inserter(temp_intersect_sensors,temp_intersect_sensors.begin()));
-            min_sensors_to_collect = min_intersect_sensors.size();
+            
+			min_sensors_to_collect = min_intersect_sensors.size() ;
+			if (min_sensors_to_collect > 1)
+			{
+				min = min_sensors_to_collect * weight;//* (1 + SN_NUM / sensorData * 0.1);
+			}
+			else
+				min = (float)min_sensors_to_collect;
+
             temp_sensors_to_collect = temp_intersect_sensors.size();
+			if (temp_sensors_to_collect > 1)
+			{
+				temp = temp_sensors_to_collect * weight; //* (1 + SN_NUM / sensorData * 0.1);
+			}
+			else
+				temp = (float)temp_sensors_to_collect;
 
             //cout<<min_sensors_to_collect<< " "<<temp_sensors_to_collect<<" "<<endl;
+			//cout << min << " " << temp << endl;
+
             min_col_time = ave_col_times.find(min_cost_reg)->second;
             temp_col_time = ave_col_times.find(*ite_temp_ovel_reg)->second;
 
             if(temp_sensors_to_collect!=0)
             {
 
-                if((temp_col_time/temp_sensors_to_collect) < (min_col_time/min_sensors_to_collect))
+                if((temp_col_time/temp) < (min_col_time/min))
                 {
                     min_cost_reg = *ite_temp_ovel_reg;
+					//cout << temp_col_time / temp << endl;
                 }
             }
+
             ite_temp_ovel_reg++;
         }
         temp_overlapping_regions.erase(min_cost_reg);
@@ -131,7 +150,7 @@ void findOptiOverlReg(map<set<short>,vector<int> >& overlapping_regions,map<set<
 
 
         cout<<entile_sensor_nodes.size()<<" ";
-        /*
+        
         set<short>::iterator ite_entile_sensor_nodes = entile_sensor_nodes.begin();
         while(ite_entile_sensor_nodes!=entile_sensor_nodes.end())
         {
@@ -148,7 +167,7 @@ void findOptiOverlReg(map<set<short>,vector<int> >& overlapping_regions,map<set<
         }
         cout<<endl;
         cout<<endl;
-        */
+        
     }
 
 

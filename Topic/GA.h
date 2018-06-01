@@ -15,7 +15,7 @@ using namespace std;
 
 const int population_size = 6500;
 const int new_population_size = 3500;
-const int steps = 500;
+const int steps = 1500;
 
 typedef vector<int> vi;
 typedef pair<vi,double> pvi;
@@ -29,8 +29,9 @@ static double bestresult;
 void _print(vector<int> v);
 bool cmp(const pvi &a, const pvi &b);
 void generate_adjacent_matrix(double **adjacencyMatrix,int n,SENSOR_NODE s[]);
+void generate_adjacent_matrix(double **adjacencyMatrix, int n, SENSOR_NODE s[], short h);
 void delete_adjacent_matrix(double **adjacencyMatrix,int n);
-double calculate(vector<int> v, const int &n, double **adjacencyMatrix);
+double calculate(vector<int> &v, const int &n, double **adjacencyMatrix);
 void generate(const int &n, double **adjacencyMatrix);
 void inversion_mutation(vi &v, const int &n);
 void swap_mutation(vi &v, const int &n) ;
